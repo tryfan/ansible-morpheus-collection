@@ -68,3 +68,4 @@ searchstring: app_label
 ```
 
 When run, this will generate an inventory with a group `morpheusgroup` and hosts that have a label of `app_label`.
+
