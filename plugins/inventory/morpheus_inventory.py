@@ -1,6 +1,14 @@
-#morpheus_inventory.py
+# morpheus_inventory.py
 
 from __future__ import (absolute_import, division, print_function)
+import requests
+import urllib3
+import json
+import os
+import yaml
+from ansible.plugins.inventory import BaseInventoryPlugin
+from ansible.errors import AnsibleError, AnsibleParserError
+
 __metaclass__ = type
 
 DOCUMENTATION = r'''
@@ -31,11 +39,6 @@ DOCUMENTATION = r'''
 '''
 
 
-import requests, urllib3, json, os, yaml
-from ansible.plugins.inventory import BaseInventoryPlugin
-from ansible.errors import AnsibleError, AnsibleParserError
-
-
 class InventoryModule(BaseInventoryPlugin):
     NAME = 'morpheus_inventory'
 
@@ -46,7 +49,7 @@ class InventoryModule(BaseInventoryPlugin):
         self.morpheus_token = ""
         self.morpheus_opt_args = {
             'token': "",
-#            'client_id': "morph-api",
+            # 'client_id': "morph-api",
             'sslverify': True
         }
 
@@ -60,7 +63,7 @@ class InventoryModule(BaseInventoryPlugin):
 
         authmethod = "token"
         headers = {'Authorization': "BEARER %s" % self.morpheus_token,
-                            "Content-Type": "application/json"}
+                   "Content-Type": "application/json"}
 
         path = "/instances"
         url = self.morpheus_api + path
@@ -75,7 +78,7 @@ class InventoryModule(BaseInventoryPlugin):
         oauth_url = self.morpheus_url + oauth_path
         authmethod = "token"
         headers = {'Authorization': "BEARER %s" % self.morpheus_token,
-                            "Content-Type": "application/json"}
+                   "Content-Type": "application/json"}
 
         path = "/instances/%s/containers" % instanceid
         url = self.morpheus_api + path
@@ -109,7 +112,7 @@ class InventoryModule(BaseInventoryPlugin):
         if searchtype == "label":
             for instance in rawresponse['instances']:
                 if searchstring in instance['tags']:
-                    #raise AnsibleParserError(json.dumps(instance))
+                    # raise AnsibleParserError(json.dumps(instance))
                     if len(instance['containers']) > 1:
                         containerdata = self._get_containers_from_morpheus(instance['id'])
                         for containerid in instance['containers']:
@@ -121,10 +124,13 @@ class InventoryModule(BaseInventoryPlugin):
                                         group=group
                                     )
                                     if self.morpheus_env:
-                                        #raise AnsibleParserError(instance['noAgent'])
-                                        self._set_morpheus_connection_vars(container['externalHostname'], container['ip'], containerid, instance['config']['noAgent'])
+                                        # raise AnsibleParserError(instance['noAgent'])
+                                        self._set_morpheus_connection_vars(container['externalHostname'],
+                                                                           container['ip'], containerid,
+                                                                           instance['config']['noAgent'])
                                     else:
-                                        self.inventory.set_variable(container['externalHostname'], 'ansible_host', container['ip'])
+                                        self.inventory.set_variable(container['externalHostname'], 'ansible_host',
+                                                                    container['ip'])
                     else:
                         self.inventory.add_host(
                             host=instance['hostName'],
@@ -156,18 +162,18 @@ class InventoryModule(BaseInventoryPlugin):
             # self.searchstring = config_data['searchstring']
             if self.morpheus_env:
                 self.workspace = str(os.environ['ANSIBLE_LOOKUP_PLUGINS'])[:-51]
-                #import pdb; pdb.set_trace()
+                # import pdb; pdb.set_trace()
                 for file in os.listdir(self.workspace):
                     if file.startswith("extraVars-"):
                         morpheusextravarsfile = self.workspace + file
                 with open(morpheusextravarsfile, 'r') as stream:
                     self.extravars = yaml.safe_load(stream)
-                #raise AnsibleParserError(self.extravars)
+                # raise AnsibleParserError(self.extravars)
                 self.morpheus_url = self.extravars['morpheus']['morpheus']['applianceUrl']
-                #self.morpheus_url = self.extravars['ansible_morpheus_url']
-                #self.morpheus_token = self.extravars['ansible_morpheus_token']
+                # self.morpheus_url = self.extravars['ansible_morpheus_url']
+                # self.morpheus_token = self.extravars['ansible_morpheus_token']
                 self.morpheus_token = config_data['morpheus_api_key']
-                #else:
+                # else:
                 #    #raise AnsibleParserError(config_data['morpheus_api_key'])
                 #    self.morpheus_token = config_data['morpheus_api_key']
             else:

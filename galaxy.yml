@@ -1,15 +1,11 @@
-namespace: "morpheus"
+namespace: "morpheusdata"
 name: "morpheus"
 version: "0.0.1"
 readme: "README.md"
 authors:
-    - "Nick Celebic (https://www.github.com/tryfan"
-# dependencies:
-    # "other_namespace.collection1": ">=1.0.0"
-    # "other_namespace.collection2": ">=2.0.0,<3.0.0"
-    # "anderson55.my_collection": "*"    # note: "*" selects the highest version available
+    - "Nick Celebic (https://www.github.com/tryfan)"
 license:
-    - "MIT"
+    - "Apache-2.0"
 tags:
     - morpheus
     - cloud
