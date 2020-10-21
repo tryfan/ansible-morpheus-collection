@@ -10,15 +10,10 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: |
-    virtualenv -p python3 /tmp/venv
-    source /tmp/venv/bin/activate
-    pip install ansible==2.9.10
+- script: pip install ansible==2.9.10
   displayName: 'Install Ansible'
 
-- script: |
-    source /tmp/venv/bin/activate
-    ansible-galaxy collection build
+- script: ansible-galaxy collection build
   displayName: 'Build Ansible collection'
 
 - publish: morpheusdata-morpheus-0.0.1.tar.gz
