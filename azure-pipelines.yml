@@ -16,4 +16,4 @@ steps:
 - script: ansible-galaxy collection build
   displayName: 'Build Ansible collection'
 
-- publish: *.tar.gz
+- publish: morpheusdata-morpheus-0.0.1.tar.gz
