@@ -13,7 +13,9 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: pip install "ansible<2.11"
+- script: |
+    pip uninstall -y ansible
+    pip install "ansible<2.11"
   displayName: 'Install Ansible'
 
 - script: ansible-galaxy collection build
