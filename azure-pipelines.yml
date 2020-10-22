@@ -14,6 +14,7 @@ pool:
 
 steps:
 - script: |
+    sudo apt remove ansible
     pip uninstall -y ansible
     pip install "ansible<2.11"
   displayName: 'Install Ansible'
