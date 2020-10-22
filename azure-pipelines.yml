@@ -3,6 +3,9 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
+variables:
+  version: 0.0.1
+
 trigger:
 - master
 
@@ -16,4 +19,4 @@ steps:
 - script: ansible-galaxy collection build
   displayName: 'Build Ansible collection'
 
-- publish: morpheusdata-morpheus-0.0.1.tar.gz
+- publish: "morpheusdata-morpheus-$(version).tar.gz"
