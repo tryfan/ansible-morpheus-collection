@@ -16,8 +16,6 @@ steps:
 - script: |
     sudo apt remove ansible
     sudo apt install ansible-base
-    # pip uninstall -y ansible
-    # pip install "ansible<2.11"
   displayName: 'Install Ansible'
 
 - script: ansible-galaxy collection build
