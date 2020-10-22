@@ -13,7 +13,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: pip install ansible==2.9.10
+- script: pip install ansible<2.11
   displayName: 'Install Ansible'
 
 - script: ansible-galaxy collection build

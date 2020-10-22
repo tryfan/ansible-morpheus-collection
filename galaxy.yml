@@ -11,3 +11,8 @@ tags:
     - cloud
     - collection
 repository: "https://www.github.com/tryfan/ansible-morpheus-collection"
+build_ignore:
+    - "Dockerfile"
+    - "*.code-workspace"
+    - "azure-pipelines.yml"
+    - "testruns"
