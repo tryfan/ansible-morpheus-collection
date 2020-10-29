@@ -16,3 +16,4 @@ build_ignore:
     - "*.code-workspace"
     - "azure-pipelines.yml"
     - "testruns"
+    - ".idea"

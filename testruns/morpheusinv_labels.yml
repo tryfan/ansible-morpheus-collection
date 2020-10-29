@@ -2,10 +2,10 @@ plugin: morpheusdata.morpheus.morpheus_inventory
 groups: 
   - name: morphtest
     searchtype: label
-    searchstring: rbt_node_label
-  - name: morphgroup2
-    searchtype: label
-    searchstring: ui_node_label
+    searchstring: whateverlabel
+#  - name: morphgroup2
+#    searchtype: label
+#    searchstring: ui_node_label
 morpheus_url: 'https://morpheus.tryfan.duckdns.org'
 morpheus_api_key: !vault |
           $ANSIBLE_VAULT;1.2;AES256;morphapi

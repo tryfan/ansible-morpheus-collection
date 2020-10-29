@@ -1,5 +1,57 @@
 # Ansible Dynamic Inventory for Morpheus
 
+## Installation
+
+### Ansible <= 2.9
+---
+**NOTE**
+
+This has been tested both with the EPEL and pip installed versions of Ansible, so
+this method should be fairly portable.
+
+---
+
+If it doesn't exist, create the directory `/usr/share/ansible/plugins/inventory`
+```
+mkdir -p /usr/share/ansible/plugins/inventory
+```
+
+Download the Ansible Morpheus Collection tarball
+
+From the tarball, copy the `plugins/inventory/morpheus_inventory.py` file to the `/usr/share/ansible/plugins/inventory` directory.
+```
+cp plugins/inventory/morpheus_inventory.py /usr/share/ansible/plugins/inventory/
+```
+
+Run `ansible-doc` to confirm installation
+```
+ansible-doc -t inventory -l | grep morpheus
+```
+
+When using this module with Ansible <= 2.9, you will refer to the module in your YAML file as:
+```
+plugin: morpheus_inventory
+```
+
+### Ansible >= 2.10
+
+Download the Ansible Morpheus Collection tarball
+
+Install the collection through Ansible
+```
+ansible-galaxy collection install <tarball>
+```
+
+Run `ansible-doc` to confirm installation
+```
+ansible-doc -t inventory -l | grep morpheus
+```
+
+When using this module as a collection with Ansible >= 2.10, refer to the module in your YAML file as:
+```
+plugin: morpheusdata.morpheus.morpheus_inventory
+```
+
 ## Usage
 
 Within Morpheus, the dynamic inventory plugin will query the API and return a set of targets based on your search and organaizational criteria.  In your Ansible integration repo, use an inventory file named `morpheusinv.yml` or `morpheusinv.yaml` to activate the plugin.
@@ -9,16 +61,15 @@ Within Morpheus, the dynamic inventory plugin will query the API and return a se
 |Name|Required|Description|
 |---|---|---|
 |plugin|yes|Use `morpheus_inventory` to activate the plugin|
-|group|yes||Array used for group definition|
+|group|yes||List used for group definition|
 |searchtype|yes|Search type for host matching.  Values: `label`, `name`|
 |searchstring|yes|Search string|
-|morpheus_api_key|no|Required for 4.2.3 and 5.0.0|
+|morpheus_api_key|no|Required for Morpheus versions <= 5.0.0|
 
-### Notes
+---
+**NOTE**
 
-#### Morpheus versions under 4.2.3 and 5.0.0
-
-These versions require an API token in the inventory file to provide access to the Morpheus API.  Look in the Examples section for an example using Ansible Vault.
+Morpheus versions <= 5.0.0  require an API token in the inventory file to provide access to the Morpheus API.  Look in the Examples section for an example using Ansible Vault.
 
 ## Examples
 
@@ -61,9 +112,11 @@ Write the rest of your inventory file with the vaulted token above:
 
 ```yaml
 plugin: morpheus_inventory
-groupname: morpheusgroup
-searchtype: label
-searchstring: app_label
+groups:
+  - name: morphtest
+    searchtype: label
+    searchstring: whateverlabel
+morpheus_url: <your morpheus url>
 <morpheus_api_key from above>
 ```
 
