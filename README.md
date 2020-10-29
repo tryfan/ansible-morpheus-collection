@@ -54,7 +54,7 @@ plugin: morpheusdata.morpheus.morpheus_inventory
 
 ## Usage
 
-Within Morpheus, the dynamic inventory plugin will query the API and return a set of targets based on your search and organaizational criteria.  In your Ansible integration repo, use an inventory file named `morpheusinv.yml` or `morpheusinv.yaml` to activate the plugin.
+Within Morpheus, the dynamic inventory plugin will query the API and return a set of targets based on your search and organaizational criteria.
 
 ### Inventory Variables
 
@@ -62,9 +62,10 @@ Within Morpheus, the dynamic inventory plugin will query the API and return a se
 |---|---|---|
 |plugin|yes|Use `morpheus_inventory` to activate the plugin|
 |group|yes||List used for group definition|
-|searchtype|yes|Search type for host matching.  Values: `label`, `name`|
-|searchstring|yes|Search string|
-|morpheus_api_key|no|Required for Morpheus versions <= 5.0.0|
+|searchtype|yes|Search type for host matching.  Values: `label`, `name`, `app`|
+|searchstring|yes|Search string - the app type uses this as a list, otherwise it is a string|
+|morpheus_url|yes|Morpheus URL|
+|morpheus_api_key|yes|Required for Morpheus versions <= 5.0.0|
 
 ---
 **NOTE**
@@ -73,42 +74,17 @@ Morpheus versions <= 5.0.0  require an API token in the inventory file to provid
 
 ## Examples
 
-### Token Requirement Example
+### Use in Morpheus
 
-Since the inventory file will need to be stored in a git repository, we don't want to have it in plain text.  This method will encrypt the token with Ansible Vault and the password to the vault will be stored on the Morpheus server itself.
+Create an Ansible Task in Morpheus and specify the playbook you wish to run.  Set the `Execute Target` to `Local`.
 
-Acquire a token by going in your Morpheus user settings and clicking the API Access button.  Any entry will be sufficient.  Regenerate an Access Token and copy it.  On your Morpheus server command line, create a directory under `/var/opt/morpheus/morpheus-ui` to store the Ansible vault id file.  We can restrict permissions on this directory to the Morpheus user that runs Ansible:
+In `Command Options` specify `-i <relative path>/morpheusinv.yml`
 
-```bash
-install -o morpheus-local -g morpheus-local -m 0770 -d /var/opt/morpheus/morpheus-ui/ansiblevault
-```
+This will process `morpheusinv.yml` as a dynamic inventory using the specified plugin.
 
-Create a file in that directory with the following [syntax](https://docs.ansible.com/ansible/latest/user_guide/vault.html#storing-passwords-in-files). Restrict permissions on the file to the same user and group as above:
+#### Name or Label
 
-```bash
-tokenvaultid <somepassword>
-```
-
-Encrypt your token using the following command:
-
-```bash
-ansible-vault encrypt_string --vault-id tokenvaultid@/var/opt/morpheus/morpheus-ui/ansiblevault/<vaultfile> '<API Token>' --name morpheus_api_key
-```
-
-This will output a string similar to the following:
-
-```yaml
-morpheus_api_key: !vault |
-          $ANSIBLE_VAULT;1.2;AES256;tokenvaultid
-          66366331356462626531303738656437616337316636663561343938366466353939343264326330
-          6233353538386634323966303566613034393463356333390a633162316637323062343739653966
-          31623861643364363965613735323865393566383464316336653034353834616232356664323764
-          3462623236353064330a373136333733633235663662626365303337373637396165643761613462
-          38623931663166616338393236633837393830373832313636363830393635393965316665326563
-          3562316436303138343662376536383131343565666635376133
-```
-
-Write the rest of your inventory file with the vaulted token above:
+In your git repo, place this file as morpheusinv.yml
 
 ```yaml
 plugin: morpheus_inventory
@@ -116,8 +92,52 @@ groups:
   - name: morphtest
     searchtype: label
     searchstring: whateverlabel
-morpheus_url: <your morpheus url>
-<morpheus_api_key from above>
+morpheus_url: <your morpheus URL>
+morpheus_api_key: <your API key>
 ```
 
-When run, this will generate an inventory with a group `morpheusgroup` and hosts that have a label of `app_label`.
+This will create a group `morphtest` and add any instances that have the label `whateverlabel` applied in Morpheus.
+
+#### App
+
+In your git repo, place this file as morpheusinv.yml
+
+```yaml
+plugin: morpheus_inventory
+groups:
+  - name: ui
+    searchtype: app
+    searchstring:
+      appname: 2tier
+      apptier: UI
+  - name: db
+    searchtype: app
+    searchstring:
+      appname: 2tier
+      apptier: Database
+morpheus_url: <your morpheus URL>
+morpheus_api_key: <your API key>
+```
+
+This will create two groups: `ui` and `db`.
+`ui` will contain instances from the `UI` tier of the `2tier` application that was deployed in Morpheus from a blueprint.
+`db` will contain instances from the `Database` tier of the `2tier` application.
+
+### Token Requirement
+
+Since the inventory file will need to be stored in a git repository, it is not advised to store it in plain text.
+
+We suggest encrypting the API token with Ansible Vault with the vault password stored in a file on the Morpheus UI server(s).
+
+Acquire a token by going in your Morpheus user settings and clicking the API Access button.
+Any entry will be sufficient.  Regenerate an Access Token and copy it.
+
+On your Morpheus server, create a directory under `/var/opt/morpheus/morpheus-ui` to store the Ansible vault password.
+Restrict permissions on this directory to the Morpheus user that runs Ansible: `morpheus-local`
+```bash
+install -o morpheus-local -g morpheus-local -m 0770 -d /var/opt/morpheus/morpheus-ui/ansiblevault
+```
+
+In your task, specify `--vault-password-file /var/opt/morpheus/morpheus-ui/ansiblevault/<file>` in order to use the password.
+
+Information on encrypting strings and variables for ansible is located [HERE](https://docs.ansible.com/ansible/latest/user_guide/vault.html)
