@@ -6,8 +6,7 @@
 ---
 **NOTE**
 
-This has been tested both with the EPEL and pip installed versions of Ansible, so
-this method should be fairly portable.
+This has been tested both with the EPEL and pip installed versions of Ansible, so this method should be fairly portable.
 
 ---
 
