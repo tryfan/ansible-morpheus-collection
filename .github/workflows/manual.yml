@@ -11,7 +11,7 @@ jobs:
       - name: Prerequisite install
         run: |
           sudo apt remove ansible
-          pip install --user ansible
+          sudo pip install ansible
           
       - name: Build collection
         run: |
