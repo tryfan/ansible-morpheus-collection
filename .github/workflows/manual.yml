@@ -10,21 +10,25 @@ jobs:
       - uses: actions/checkout@v2
       - name: Prerequisite install
         run: |
-          apt remove ansible
-          pip install ansible
+          sudo apt remove ansible
+          sudo pip install ansible
           
       - name: Build collection
         run: |
           cd $GITHUB_WORKSPACE
           ansible-galaxy collection build
-          
+      
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3 | cut -c2-)
+      
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.0
         with:
           # Artifact name
-          name: artifact # optional, default is artifact
+          name: "morpheusdata-morpheus-${{ steps.get_version.outputs.VERSION }}.tar.gz" # optional, default is artifact
           # A file, directory or wildcard pattern that describes what to upload
-          path: $GITHUB_WORKSPACE/*.tar.gz
+          path: /home/runner/work/ansible-morpheus-collection/ansible-morpheus-collection/*.tar.gz
           # The desired behavior if no files are found using the provided path.
       #Available Options:
         #warn: Output a warning but do not fail the action
