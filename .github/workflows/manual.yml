@@ -1,3 +1,5 @@
+# .github/workflows/manual.yml
+
 name: Build Collection
 on: [workflow_dispatch]
 jobs:
