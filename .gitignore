@@ -5,3 +5,4 @@
 tests/output
 .idea
 *.tar.gz
+testruns/
