@@ -17,7 +17,11 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           ansible-galaxy collection build
-          
+      
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3 | cut -c2-)
+      
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.0
         with:
