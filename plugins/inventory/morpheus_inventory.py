@@ -161,7 +161,7 @@ class InventoryModule(BaseInventoryPlugin):
         elif searchtype == "app":
             for app in rawresponse['apps']:
                 # import pdb; pdb.set_trace()
-                if searchstring['appname'] in app['name'] and \
+                if searchstring['appname'] == app['name'] and \
                         app['appStatus'] in ['running', 'completed']:
                     for apptier in app['appTiers']:
                         if searchstring['apptier'] in apptier['tier']['name']:
