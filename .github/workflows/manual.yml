@@ -20,7 +20,7 @@ jobs:
       
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=VERSION::$(grep version galaxy.yml | gawk '{print $2}' | tail -c +2 | head -c -3)
+        run: echo ::set-output name=VERSION::$(echo dev)
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.0
