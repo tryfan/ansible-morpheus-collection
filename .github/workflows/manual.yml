@@ -22,6 +22,9 @@ jobs:
         id: get_version
         run: echo ::set-output name=VERSION::$(echo dev)
 
+      - name: Rename output
+        run: mv *.tar.gz morpheusdata-morpheus-dev.tar.gz
+
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.0
         with:
