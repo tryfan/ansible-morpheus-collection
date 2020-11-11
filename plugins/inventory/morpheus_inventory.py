@@ -6,6 +6,7 @@ import urllib3
 import json
 import os
 import yaml
+import sys
 from ansible.plugins.inventory import BaseInventoryPlugin
 from ansible.errors import AnsibleError, AnsibleParserError
 
@@ -49,39 +50,61 @@ class InventoryModule(BaseInventoryPlugin):
         self.morpheus_token = ""
         self.morpheus_opt_args = {
             'token': "",
-            # 'client_id': "morph-api",
             'sslverify': True
         }
         self.extravars = None
         self.workspace = ""
         self.groups = None
 
-    def _get_data_from_morpheus(self, searchtype):
+    def _get_data_from_morpheus(self, searchtype, searchstring=None):
 
-        oauth_path = "/oauth/token?grant_type=password&scope=write"
-        oauth_url = self.morpheus_url + oauth_path
-
-        # if not optargs['sslverify']:
-        #     urllib3.disable_warnings()
+        # oauth_path = "/oauth/token?grant_type=password&scope=write"
+        # oauth_url = self.morpheus_url + oauth_path
 
         authmethod = "token"
         headers = {'Authorization': "BEARER %s" % self.morpheus_token,
                    "Content-Type": "application/json"}
+        method = "get"
+        verify = self.morpheus_opt_args['sslverify']
 
         if searchtype in ["label", "name"]:
             path = "/instances"
         elif searchtype == "app":
             path = "/apps"
+        elif searchtype == "cloud":
+            cloudid = None
+            if searchstring is None:
+                raise AnsibleParserError("Searchtype cloud must have a searchstring")
+            ### Python 2 fix
+            cloud_is_numeric = True
+            if sys.version_info[0] == 2:
+                if unicode(searchstring).isnumeric() is not True:
+                    cloud_is_numeric = False
+            if sys.version_info[0] == 3:
+                if str(searchstring).isnumeric() is not True:
+                    cloud_is_numeric = False
+            
+            if not cloud_is_numeric:
+                cloudurl = self.morpheus_api + "/zones"
+                cloudr = getattr(requests, method)(cloudurl, headers=headers, verify=verify)
+                cloudoutput = cloudr.json()
+                for c in cloudoutput['zones']:
+                    if c['code'] == searchstring:
+                        cloudid = c['id']
+                        break
+                if cloudid is None:
+                    raise AnsibleParserError("Could not find a cloud with code: %s" % searchstring)
+            else:
+                cloudid = searchstring
+            path = "/instances?zoneId=%s" % cloudid
         url = self.morpheus_api + path
-        method = "get"
-        verify = self.morpheus_opt_args['sslverify']
         r = getattr(requests, method)(url, headers=headers, verify=verify)
         return r.json()
         # import pdb; pdb.set_trace()
 
     def _get_containers_from_morpheus(self, instanceid):
-        oauth_path = "/oauth/token?grant_type=password&scope=write"
-        oauth_url = self.morpheus_url + oauth_path
+        # oauth_path = "/oauth/token?grant_type=password&scope=write"
+        # oauth_url = self.morpheus_url + oauth_path
         authmethod = "token"
         headers = {'Authorization': "BEARER %s" % self.morpheus_token,
                    "Content-Type": "application/json"}
@@ -92,7 +115,6 @@ class InventoryModule(BaseInventoryPlugin):
         verify = self.morpheus_opt_args['sslverify']
         r = getattr(requests, method)(url, headers=headers, verify=verify)
         return r.json()
-        # import pdb; pdb.set_trace()
 
     def _set_morpheus_connection_vars(self, hostname, ip, containerid, noagent=False):
         if noagent == "null" or noagent is False:
@@ -106,40 +128,65 @@ class InventoryModule(BaseInventoryPlugin):
         if agent:
             self.inventory.set_variable(hostname, 'ansible_connection', 'morpheus')
 
+    def _add_morpheus_instance_cloud_bytag(self, instance):
+        for tag in instance['metadata']:
+            if str(tag['name']).startswith("Morpheus "):
+                continue
+            group = "%s_%s" % (tag['name'], tag['value'])
+            self.inventory.add_group(group)
+            self._add_morpheus_instance(group, instance)
+
+    def _get_server_platform(self, serverid):
+        authmethod = "token"
+        headers = {'Authorization': "BEARER %s" % self.morpheus_token,
+                   "Content-Type": "application/json"}
+        method = "get"
+        verify = self.morpheus_opt_args['sslverify']
+        path = "/servers/%s" % serverid
+        url = self.morpheus_api + path
+        r = getattr(requests, method)(url, headers=headers, verify=verify)
+        resultdict = r.json()
+
+        return resultdict['server']['platform']
+
+    def _add_morpheus_container(self, group, containerid, container, platform_query=False):
+        if platform_query:
+            group = self._get_server_platform(container['server']['id'])
+            if group is None:
+                group = "platform_undetected"
+            self.inventory.add_group(group)
+        self.inventory.add_host(
+            host=container['externalHostname'],
+            group=group
+        )
+        if self.morpheus_env:
+            if 'ts' in container['stats']:
+                noagent = False
+            else:
+                noagent = True
+            self._set_morpheus_connection_vars(container['externalHostname'],
+                                                container['ip'], containerid,
+                                                noagent)
+        else:
+            self.inventory.set_variable(container['externalHostname'],
+                                        'ansible_host',
+                                        container['ip'])
+
     def _add_morpheus_instance(self, group, instance):
-        # import pdb; pdb.set_trace()
+        platform_query = False
+        if group == "platform_query":
+            platform_query = True
+
         if len(instance['containers']) > 1:
             containerdata = self._get_containers_from_morpheus(instance['id'])
             for containerid in instance['containers']:
                 for container in containerdata['containers']:
-                    # import pdb; pdb.set_trace()
                     if containerid == container['id']:
-                        self.inventory.add_host(
-                            host=container['externalHostname'],
-                            group=group
-                        )
-                        if self.morpheus_env:
-                            # raise AnsibleParserError(instance['noAgent'])
-                            self._set_morpheus_connection_vars(container['externalHostname'],
-                                                               container['ip'], containerid,
-                                                               instance['config']['noAgent'])
-                        else:
-                            self.inventory.set_variable(container['externalHostname'],
-                                                        'ansible_host',
-                                                        container['ip'])
+                        self._add_morpheus_container(group, containerid, container, platform_query)
         else:
             containerdata = self._get_containers_from_morpheus(instance['id'])
-            self.inventory.add_host(
-                host=instance['hostName'],
-                group=group
-            )
-            if self.morpheus_env:
-                if 'ts' in containerdata['containers'][0]['stats']:
-                    noagent = False
-                else:
-                    noagent = True
-                self._set_morpheus_connection_vars(containerdata['containers'][0]['externalHostname'],
-                                                   containerdata['containers'][0]['ip'], containerdata['containers'][0]['id'], noagent)
+            containerid = containerdata['containers'][0]['id']
+            self._add_morpheus_container(group, containerid, containerdata['containers'][0], platform_query)
 
     def _filter_morpheus_output(self, rawresponse, group, searchtype, searchstring):
         output = {}
@@ -160,13 +207,16 @@ class InventoryModule(BaseInventoryPlugin):
                     self._add_morpheus_instance(group, instance)
         elif searchtype == "app":
             for app in rawresponse['apps']:
-                # import pdb; pdb.set_trace()
                 if searchstring['appname'].lower() == app['name'].lower() and \
                         app['appStatus'] in ['running', 'completed']:
                     for apptier in app['appTiers']:
                         if searchstring['apptier'] in apptier['tier']['name']:
                             for instance in apptier['appInstances']:
                                 self._add_morpheus_instance(group, instance['instance'])
+        elif searchtype == "cloud":
+            for instance in rawresponse['instances']:
+                self._add_morpheus_instance_cloud_bytag(instance)
+                self._add_morpheus_instance("platform_query", instance)
 
     def verify_file(self, path):
         '''Return true/false if this is possibly a valid file for this plugin to
@@ -187,24 +237,15 @@ class InventoryModule(BaseInventoryPlugin):
 
         try:
             self.groups = config_data['groups']
-            # self.searchtype = config_data['searchtype']
-            # self.searchstring = config_data['searchstring']
             if self.morpheus_env:
                 self.workspace = str(os.environ['ANSIBLE_LOOKUP_PLUGINS'])[:-51]
-                # import pdb; pdb.set_trace()
                 for file in os.listdir(self.workspace):
                     if file.startswith("extraVars-"):
                         morpheusextravarsfile = self.workspace + file
                 with open(morpheusextravarsfile, 'r') as stream:
                     self.extravars = yaml.safe_load(stream)
-                # raise AnsibleParserError(self.extravars)
                 self.morpheus_url = self.extravars['morpheus']['morpheus']['applianceUrl']
-                # self.morpheus_url = self.extravars['ansible_morpheus_url']
-                # self.morpheus_token = self.extravars['ansible_morpheus_token']
                 self.morpheus_token = config_data['morpheus_api_key']
-                # else:
-                #    #raise AnsibleParserError(config_data['morpheus_api_key'])
-                #    self.morpheus_token = config_data['morpheus_api_key']
             else:
                 self.morpheus_url = config_data['morpheus_url']
                 self.morpheus_token = config_data['morpheus_api_key']
@@ -222,9 +263,11 @@ class InventoryModule(BaseInventoryPlugin):
         except Exception as e:
             raise AnsibleParserError('Options missing: {}'.format(e))
 
-        # import pdb; pdb.set_trace()
         for group in self.groups:
-            self.inventory.add_group(group['name'])
-            rawoutput = self._get_data_from_morpheus(searchtype=group['searchtype'])
-            self._filter_morpheus_output(rawoutput, group['name'], group['searchtype'], group['searchstring'])
-            # import pdb; pdb.set_trace()
+            if group['searchtype'] == 'cloud':
+                rawoutput = self._get_data_from_morpheus(searchtype=group['searchtype'],searchstring=group['searchstring'])
+                self._filter_morpheus_output(rawoutput, None, group['searchtype'], group['searchstring'])
+            else:
+                self.inventory.add_group(group['name'])
+                rawoutput = self._get_data_from_morpheus(searchtype=group['searchtype'])
+                self._filter_morpheus_output(rawoutput, group['name'], group['searchtype'], group['searchstring'])
