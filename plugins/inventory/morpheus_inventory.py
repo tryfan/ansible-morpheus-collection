@@ -199,8 +199,9 @@ class InventoryModule(BaseInventoryPlugin):
                 raise AnsibleParserError("Cannot find morpheus private key in workspace directory")
         if searchtype == "label":
             for instance in rawresponse['instances']:
-                if searchstring in instance['tags']:
-                    self._add_morpheus_instance(group, instance)
+                for tag in instance['tags']:
+                    if str(searchstring).lower() == str(tag).lower():
+                        self._add_morpheus_instance(group, instance)
         elif searchtype == "name":
             for instance in rawresponse['instances']:
                 if searchstring in instance['name']:
