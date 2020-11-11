@@ -1,6 +1,6 @@
 namespace: "morpheusdata"
 name: "morpheus"
-version: "0.0.1"
+version: "0.0.2"
 readme: "README.md"
 authors:
     - "Nick Celebic (https://www.github.com/tryfan)"
