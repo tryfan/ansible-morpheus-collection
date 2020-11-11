@@ -60,14 +60,17 @@ Within Morpheus, the dynamic inventory plugin will query the API and return a se
 |Name|Required|Description|
 |---|---|---|
 |plugin|yes|Use `morpheus_inventory` to activate the plugin|
-|group|yes||List used for group definition|
-|searchtype|yes|Search type for host matching.  Values: `label`, `name`, `app`|
+|groups|yes||List used for group definition|
+|name|yes|Required except for `cloud` search types|
+|searchtype|yes|Search type for host matching.  Values: `label`, `name`, `app`, `cloud`|
 |searchstring|yes|Search string - the app type uses this as a list, otherwise it is a string|
 |morpheus_url|yes|Morpheus URL|
 |morpheus_api_key|yes|Required for Morpheus versions <= 5.0.0|
 
 ---
-**NOTE**
+**NOTES**
+
+If 
 
 Morpheus versions <= 5.0.0  require an API token in the inventory file to provide access to the Morpheus API.  Look in the Examples section for an example using Ansible Vault.
 
@@ -83,7 +86,9 @@ This will process `morpheusinv.yml` as a dynamic inventory using the specified p
 
 #### Name or Label
 
-In your git repo, place this file as morpheusinv.yml
+Name searches are a simple text match. If your string is in the name anywhere, it will match.  Label must match exactly, but is case insensitive.
+
+**Example:**
 
 ```yaml
 plugin: morpheus_inventory
@@ -99,7 +104,9 @@ This will create a group `morphtest` and add any instances that have the label `
 
 #### App
 
-In your git repo, place this file as morpheusinv.yml
+The App search type will create a group named `name` out of the instances in the `apptier` tier of app `appname`.
+
+**Example:**
 
 ```yaml
 plugin: morpheus_inventory
@@ -121,6 +128,21 @@ morpheus_api_key: <your API key>
 This will create two groups: `ui` and `db`.
 `ui` will contain instances from the `UI` tier of the `2tier` application that was deployed in Morpheus from a blueprint.
 `db` will contain instances from the `Database` tier of the `2tier` application.
+
+#### Cloud
+
+Cloud types will match the searchstring against the cloud `code` or `id` and generate groups based on remote tags as `<key>_<value>`.  It will also generate groups based on `platform` as seen by the Morpheus agent.  Unknown or agent-less VMs will appear under the `platform_undetected` group.
+
+**Example:**
+
+```yaml
+plugin: morpheus_inventory
+groups: 
+  - searchtype: cloud
+    searchstring: vmware
+morpheus_url: <your morpheus URL>
+morpheus_api_key: <your API key>
+```
 
 ### Token Requirement
 
