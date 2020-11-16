@@ -7,6 +7,7 @@ import json
 import os
 import yaml
 import sys
+from packaging import version
 from ansible.plugins.inventory import BaseInventoryPlugin
 from ansible.errors import AnsibleError, AnsibleParserError
 
@@ -52,9 +53,19 @@ class InventoryModule(BaseInventoryPlugin):
             'token': "",
             'sslverify': True
         }
+        self.morpheus_version = None
         self.extravars = None
         self.workspace = ""
         self.groups = None
+
+    def _set_version_from_morpheus(self):
+
+        method = "get"
+        verify = self.morpheus_opt_args['sslverify']
+        versionapi = self.morpheus_api + "/ping"
+        v = getattr(requests, method)(versionapi, verify=verify)
+        returned_v = v.json()
+        self.morpheus_version = returned_v['buildVersion']
 
     def _get_data_from_morpheus(self, searchtype, searchstring=None):
 
@@ -198,10 +209,16 @@ class InventoryModule(BaseInventoryPlugin):
             except Exception as e:
                 raise AnsibleParserError("Cannot find morpheus private key in workspace directory")
         if searchtype == "label":
+            # import pdb; pdb.set_trace()
             for instance in rawresponse['instances']:
-                for tag in instance['tags']:
-                    if str(searchstring).lower() == str(tag).lower():
-                        self._add_morpheus_instance(group, instance)
+                if version.parse(self.morpheus_version) > version.parse("5.0"):
+                    for label in instance['labels']:
+                        if str(searchstring).lower() == str(label).lower():
+                            self._add_morpheus_instance(group, instance)
+                else:
+                    for tag in instance['tags']:
+                        if str(searchstring).lower() == str(tag).lower():
+                            self._add_morpheus_instance(group, instance)
         elif searchtype == "name":
             for instance in rawresponse['instances']:
                 if searchstring in instance['name']:
@@ -263,6 +280,8 @@ class InventoryModule(BaseInventoryPlugin):
                     raise AnsibleParserError('morpheus_ssl_verify must be set to "True" or "False"')
         except Exception as e:
             raise AnsibleParserError('Options missing: {}'.format(e))
+
+        self._set_version_from_morpheus()
 
         for group in self.groups:
             if group['searchtype'] == 'cloud':
