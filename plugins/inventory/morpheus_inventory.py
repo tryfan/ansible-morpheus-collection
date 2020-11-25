@@ -272,10 +272,10 @@ class InventoryModule(BaseInventoryPlugin):
             if 'morpheus_client_id' in config_data:
                 self.morpheus_opt_args['client_id'] = config_data['morpheus_client_id']
             if 'morpheus_ssl_verify' in config_data:
-                if "true" or "True" in config_data['morpheus_ssl_verify']:
-                    self.morpheus_opt_args['ssl_verify'] = True
-                elif "false" or "False" in config_data['morpheus_ssl_verify']:
-                    self.morpheus_opt_args['ssl_verify'] = False
+                if config_data['morpheus_ssl_verify']:
+                    self.morpheus_opt_args['sslverify'] = True
+                elif config_data['morpheus_ssl_verify'] is False:
+                    self.morpheus_opt_args['sslverify'] = False
                 else:
                     raise AnsibleParserError('morpheus_ssl_verify must be set to "True" or "False"')
         except Exception as e:
