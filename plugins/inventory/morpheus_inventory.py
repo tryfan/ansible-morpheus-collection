@@ -7,7 +7,7 @@ import json
 import os
 import yaml
 import sys
-from distutils.version import LooseVersion
+from packaging import version
 from ansible.plugins.inventory import BaseInventoryPlugin
 from ansible.errors import AnsibleError, AnsibleParserError
 
@@ -211,7 +211,7 @@ class InventoryModule(BaseInventoryPlugin):
         if searchtype == "label":
             # import pdb; pdb.set_trace()
             for instance in rawresponse['instances']:
-                if LooseVersion(self.morpheus_version) > LooseVersion("5.0"):
+                if version.parse(self.morpheus_version) > version.parse("5.0"):
                     for label in instance['labels']:
                         if str(searchstring).lower() == str(label).lower():
                             self._add_morpheus_instance(group, instance)
