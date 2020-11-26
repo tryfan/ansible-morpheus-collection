@@ -70,8 +70,6 @@ Within Morpheus, the dynamic inventory plugin will query the API and return a se
 ---
 **NOTES**
 
-If 
-
 Morpheus versions <= 5.0.0  require an API token in the inventory file to provide access to the Morpheus API.  Look in the Examples section for an example using Ansible Vault.
 
 ## Examples
@@ -83,6 +81,10 @@ Create an Ansible Task in Morpheus and specify the playbook you wish to run.  Se
 In `Command Options` specify `-i <relative path>/morpheusinv.yml`
 
 This will process `morpheusinv.yml` as a dynamic inventory using the specified plugin.
+
+**NOTES**
+
+This plugin requires the Morpheus agent on target hosts due to credential storage methods in Morpheus.
 
 #### Name or Label
 
