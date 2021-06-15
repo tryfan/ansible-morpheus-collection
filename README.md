@@ -66,6 +66,7 @@ Within Morpheus, the dynamic inventory plugin will query the API and return a se
 |searchstring|yes|Search string - the app type uses this as a list, otherwise it is a string|
 |morpheus_url|yes|Morpheus URL|
 |morpheus_api_key|yes|Required for Morpheus versions <= 5.0.0|
+|morpheus_ssl_verify|no|Option to disable ssl verification, defaults to True|
 
 ---
 **NOTES**
