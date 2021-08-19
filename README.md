@@ -62,8 +62,8 @@ Within Morpheus, the dynamic inventory plugin will query the API and return a se
 |plugin|yes|Use `morpheus_inventory` to activate the plugin|
 |groups|yes||List used for group definition|
 |name|yes|Required except for `cloud` search types|
-|searchtype|yes|Search type for host matching.  Values: `label`, `name`, `app`, `cloud`|
-|searchstring|yes|Search string - the app type uses this as a list, otherwise it is a string|
+|searchtype|yes|Search type for host matching.  Values: `label`, `name`, `app`, `cloud`, `tag`|
+|searchstring|yes|Search string - the `app` and `tag` types uses this as a list, otherwise it is a string|
 |morpheus_url|yes|Morpheus URL|
 |morpheus_api_key|yes|Required for Morpheus versions <= 5.0.0|
 |morpheus_ssl_verify|no|Option to disable ssl verification, defaults to True|
@@ -105,6 +105,31 @@ morpheus_api_key: <your API key>
 
 This will create a group `morphtest` and add any instances that have the label `whateverlabel` applied in Morpheus.
 
+#### Tag
+
+The tag search requires a tag name and value to be specified to add instances to a specified group.
+
+**Example:**
+
+```yaml
+plugin: morpheus_inventory
+groups:
+  - name: dockerhosts
+    searchtype: tag
+    searchstring:
+      tagName: servertype
+      tagValue: docker
+  - name: morpheus_ui
+    searchtype: tag
+    searchstring:
+      tagName: application
+      tagValue: morpheus
+morpheus_url: <your morpheus URL>
+morpheus_api_key: <your API key>
+```
+
+This will create 2 groups.  Instances tagged with a `servertype` tag with a value of `docker` will be put into the `dockerhosts` group.
+Instances tagged with an `application` tag with a value of `morpheus` will be put into the `morpheus_ui` group.
 #### App
 
 The App search type will create a group named `name` out of the instances in the `apptier` tier of app `appname`.

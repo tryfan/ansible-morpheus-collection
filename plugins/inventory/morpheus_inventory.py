@@ -86,7 +86,7 @@ class InventoryModule(BaseInventoryPlugin):
         method = "get"
         verify = self.morpheus_opt_args['sslverify']
 
-        if searchtype in ["label", "name"]:
+        if searchtype in ["label", "name", "tag"]:
             path = "/instances"
         elif searchtype == "app":
             path = "/apps"
@@ -253,6 +253,11 @@ class InventoryModule(BaseInventoryPlugin):
             for instance in rawresponse['instances']:
                 self._add_morpheus_instance_cloud_bytag(instance)
                 self._add_morpheus_instance("platform_query", instance)
+        elif searchtype == "tag":
+            for instance in rawresponse['instances']:
+                for tag in instance['tags']:
+                    if searchstring['tagName'] == tag['name'] and searchstring['tagValue'] == tag['value']:
+                        self._add_morpheus_instance(group, instance)
 
     def verify_file(self, path):
         '''Return true/false if this is possibly a valid file for this plugin to
