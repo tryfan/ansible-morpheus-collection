@@ -107,6 +107,8 @@ class InventoryModule(BaseInventoryPlugin):
                 cloudurl = self.morpheus_api + "/zones"
                 cloudr = getattr(requests, method)(cloudurl, headers=headers, verify=verify)
                 cloudoutput = cloudr.json()
+                if 'error' in cloudoutput.keys():
+                    raise AnsibleParserError("Error in Morpheus API call: %s" % cloudoutput['error'])
                 for c in cloudoutput['zones']:
                     if c['code'] == searchstring:
                         cloudid = c['id']
@@ -118,6 +120,8 @@ class InventoryModule(BaseInventoryPlugin):
             path = "/instances?zoneId=%s" % cloudid
         url = self.morpheus_api + path
         r = getattr(requests, method)(url, headers=headers, verify=verify)
+        if 'error' in r.json().keys():
+            raise AnsibleParserError("Error in Morpheus API call: %s" % r.json()['error'])
         return r.json()
         # import pdb; pdb.set_trace()
 
