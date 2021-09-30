@@ -87,9 +87,9 @@ class InventoryModule(BaseInventoryPlugin):
         verify = self.morpheus_opt_args['sslverify']
 
         if searchtype in ["label", "name", "tag"]:
-            path = "/instances"
+            path = "/instances?max=-1"
         elif searchtype == "app":
-            path = "/apps"
+            path = "/apps?max=-1"
         elif searchtype == "cloud":
             cloudid = None
             if searchstring is None:
@@ -104,7 +104,7 @@ class InventoryModule(BaseInventoryPlugin):
                     cloud_is_numeric = False
             
             if not cloud_is_numeric:
-                cloudurl = self.morpheus_api + "/zones"
+                cloudurl = self.morpheus_api + "/zones?max=-1"
                 cloudr = getattr(requests, method)(cloudurl, headers=headers, verify=verify)
                 cloudoutput = cloudr.json()
                 if 'error' in cloudoutput.keys():
@@ -117,7 +117,7 @@ class InventoryModule(BaseInventoryPlugin):
                     raise AnsibleParserError("Could not find a cloud with code: %s" % searchstring)
             else:
                 cloudid = searchstring
-            path = "/instances?zoneId=%s" % cloudid
+            path = "/instances?zoneId=%s&max=-1" % cloudid
         url = self.morpheus_api + path
         r = getattr(requests, method)(url, headers=headers, verify=verify)
         if 'error' in r.json().keys():
@@ -132,7 +132,7 @@ class InventoryModule(BaseInventoryPlugin):
         headers = {'Authorization': "BEARER %s" % self.morpheus_token,
                    "Content-Type": "application/json"}
 
-        path = "/instances/%s/containers" % instanceid
+        path = "/instances/%s/containers?max=-1" % instanceid
         url = self.morpheus_api + path
         method = "get"
         verify = self.morpheus_opt_args['sslverify']
