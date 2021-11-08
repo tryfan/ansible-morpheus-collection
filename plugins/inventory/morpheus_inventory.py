@@ -55,6 +55,8 @@ class InventoryModule(BaseInventoryPlugin):
         }
         self.morpheus_version = None
         self.morpheus_oldmetadata = False
+        self.morpheus_simulate = False
+        self.morpheus_simulate_agent = False
         self.extravars = None
         self.workspace = ""
         self.groups = None
@@ -69,16 +71,12 @@ class InventoryModule(BaseInventoryPlugin):
         self.morpheus_version = returned_v['buildVersion']
 
     def _set_morpheus_oldmetadata(self):
-        # if LooseVersion(self.morpheus_version) > LooseVersion("5.0"):
         if LooseVersion(self.morpheus_version) < LooseVersion("4.2.5"):
             self.morpheus_oldmetadata = True
         if (LooseVersion(self.morpheus_version) >= LooseVersion("5.0")) and (LooseVersion(self.morpheus_version) < LooseVersion("5.2.1")):
             self.morpheus_oldmetadata = True
 
     def _get_data_from_morpheus(self, searchtype, searchstring=None):
-
-        # oauth_path = "/oauth/token?grant_type=password&scope=write"
-        # oauth_url = self.morpheus_url + oauth_path
 
         authmethod = "token"
         headers = {'Authorization': "BEARER %s" % self.morpheus_token,
@@ -102,7 +100,7 @@ class InventoryModule(BaseInventoryPlugin):
             if sys.version_info[0] == 3:
                 if str(searchstring).isnumeric() is not True:
                     cloud_is_numeric = False
-            
+
             if not cloud_is_numeric:
                 cloudurl = self.morpheus_api + "/zones?max=-1"
                 cloudr = getattr(requests, method)(cloudurl, headers=headers, verify=verify)
@@ -123,11 +121,8 @@ class InventoryModule(BaseInventoryPlugin):
         if 'error' in r.json().keys():
             raise AnsibleParserError("Error in Morpheus API call: %s" % r.json()['error'])
         return r.json()
-        # import pdb; pdb.set_trace()
 
     def _get_containers_from_morpheus(self, instanceid):
-        # oauth_path = "/oauth/token?grant_type=password&scope=write"
-        # oauth_url = self.morpheus_url + oauth_path
         authmethod = "token"
         headers = {'Authorization': "BEARER %s" % self.morpheus_token,
                    "Content-Type": "application/json"}
@@ -139,7 +134,7 @@ class InventoryModule(BaseInventoryPlugin):
         r = getattr(requests, method)(url, headers=headers, verify=verify)
         return r.json()
 
-    def _set_morpheus_connection_vars(self, hostname, ip, containerid, noagent=False):
+    def _set_morpheus_connection_vars(self, hostname, ip, containerid, noagent=False, platform=None):
         if noagent == "null" or noagent is False:
             agent = True
         else:
@@ -149,7 +144,10 @@ class InventoryModule(BaseInventoryPlugin):
         self.inventory.set_variable(hostname, 'ansible_ssh_private_key_file', self.morpheusprivatekeyfile)
         self.inventory.set_variable(hostname, 'ansible_morpheus_container_id', containerid)
         if agent:
-            self.inventory.set_variable(hostname, 'ansible_connection', 'morpheus')
+            if platform == "windows":
+                self.inventory.set_variable(hostname, 'ansible_connection', 'morpheus_win')
+            else:
+                self.inventory.set_variable(hostname, 'ansible_connection', 'morpheus')
 
     def _add_morpheus_instance_cloud_bytag(self, instance):
         if self.morpheus_oldmetadata:
@@ -165,7 +163,7 @@ class InventoryModule(BaseInventoryPlugin):
                 self.inventory.add_group(group)
                 self._add_morpheus_instance(group, instance)
 
-    def _get_server_platform(self, serverid):
+    def _get_server_details(self, serverid):
         authmethod = "token"
         headers = {'Authorization': "BEARER %s" % self.morpheus_token,
                    "Content-Type": "application/json"}
@@ -176,28 +174,34 @@ class InventoryModule(BaseInventoryPlugin):
         r = getattr(requests, method)(url, headers=headers, verify=verify)
         resultdict = r.json()
 
-        return resultdict['server']['platform']
+        return resultdict['server']
 
     def _add_morpheus_container(self, group, containerid, container, platform_query=False):
+        server = self._get_server_details(container['server']['id'])
+        platform = server['serverOs']['category']
         if platform_query:
-            group = self._get_server_platform(container['server']['id'])
-            if group is None:
+            if platform is None:
                 group = "platform_undetected"
+            else:
+                group = platform
             self.inventory.add_group(group)
+        container_hostname = container['externalHostname']
         self.inventory.add_host(
-            host=container['externalHostname'],
+            host=container_hostname,
             group=group
         )
-        if self.morpheus_env:
-            if 'ts' in container['stats']:
+        if self.morpheus_env or self.morpheus_simulate:
+            if server['agentInstalled'] is True or self.morpheus_simulate_agent:
                 noagent = False
             else:
                 noagent = True
-            self._set_morpheus_connection_vars(container['externalHostname'],
+            if self.morpheus_simulate: 
+                self.morpheusprivatekeyfile = "/tmp/mock.key"
+            self._set_morpheus_connection_vars(container_hostname,
                                                 container['ip'], containerid,
-                                                noagent)
+                                                noagent, platform)
         else:
-            self.inventory.set_variable(container['externalHostname'],
+            self.inventory.set_variable(container_hostname,
                                         'ansible_host',
                                         container['ip'])
 
@@ -227,7 +231,6 @@ class InventoryModule(BaseInventoryPlugin):
             except Exception as e:
                 raise AnsibleParserError("Cannot find morpheus private key in workspace directory")
         if searchtype == "label":
-            # import pdb; pdb.set_trace()
             for instance in rawresponse['instances']:
                 if LooseVersion(self.morpheus_version) > LooseVersion("5.0"):
                     for label in instance['labels']:
@@ -272,7 +275,7 @@ class InventoryModule(BaseInventoryPlugin):
     def parse(self, inventory, loader, path, cache):
         '''Return dynamic inventory from source '''
         super(InventoryModule, self).parse(inventory, loader, path, cache)
-        
+
         if os.environ['PWD'].startswith('/var/opt/morpheus'):
             self.morpheus_env = True
         config_data = self._read_config_data(path)
@@ -302,6 +305,9 @@ class InventoryModule(BaseInventoryPlugin):
                     self.morpheus_opt_args['sslverify'] = False
                 else:
                     raise AnsibleParserError('morpheus_ssl_verify must be set to "True" or "False"')
+            if 'morpheus_simulate' in config_data: self.morpheus_simulate = config_data['morpheus_simulate']
+            if 'morpheus_simulate_agent' in config_data: self.morpheus_simulate_agent = config_data['morpheus_simulate_agent']
+
         except Exception as e:
             raise AnsibleParserError('Options missing: {}'.format(e))
 
