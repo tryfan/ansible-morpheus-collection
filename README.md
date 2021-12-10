@@ -1,8 +1,29 @@
-# Ansible Dynamic Inventory for Morpheus
+# Ansible Morpheus Collection
 
-## Installation
+- [Ansible Morpheus Collection](#ansible-morpheus-collection)
+  - [Ansible Dynamic Inventory for Morpheus](#ansible-dynamic-inventory-for-morpheus)
+    - [Installation](#installation)
+      - [Ansible <= 2.9](#ansible--29)
+      - [Ansible >= 2.10](#ansible--210)
+    - [Usage](#usage)
+      - [Inventory Variables](#inventory-variables)
+    - [Examples](#examples)
+      - [Use in Morpheus](#use-in-morpheus)
+      - [Name or Label](#name-or-label)
+      - [Tag](#tag)
+      - [App](#app)
+      - [Cloud](#cloud)
+    - [Token Requirement](#token-requirement)
+  - [Ansible Roles for Morpheus Setup](#ansible-roles-for-morpheus-setup)
 
-### Ansible <= 2.9
+## Ansible Dynamic Inventory for Morpheus
+
+### Installation
+
+Ansible made many changes in versions past 2.9, please see appropriate installation section.
+
+#### Ansible <= 2.9
+
 ---
 **NOTE**
 
@@ -32,7 +53,7 @@ When using this module with Ansible <= 2.9, you will refer to the module in your
 plugin: morpheus_inventory
 ```
 
-### Ansible >= 2.10
+#### Ansible >= 2.10
 
 Download the Ansible Morpheus Collection tarball
 
@@ -51,11 +72,11 @@ When using this module as a collection with Ansible >= 2.10, refer to the module
 plugin: morpheusdata.morpheus.morpheus_inventory
 ```
 
-## Usage
+### Usage
 
 Within Morpheus, the dynamic inventory plugin will query the API and return a set of targets based on your search and organaizational criteria.
 
-### Inventory Variables
+#### Inventory Variables
 
 |Name|Required|Description|
 |---|---|---|
@@ -73,9 +94,9 @@ Within Morpheus, the dynamic inventory plugin will query the API and return a se
 
 Morpheus versions <= 5.0.0  require an API token in the inventory file to provide access to the Morpheus API.  Look in the Examples section for an example using Ansible Vault.
 
-## Examples
+### Examples
 
-### Use in Morpheus
+#### Use in Morpheus
 
 Create an Ansible Task in Morpheus and specify the playbook you wish to run.  Set the `Execute Target` to `Local`.
 
@@ -130,6 +151,7 @@ morpheus_api_key: <your API key>
 
 This will create 2 groups.  Instances tagged with a `servertype` tag with a value of `docker` will be put into the `dockerhosts` group.
 Instances tagged with an `application` tag with a value of `morpheus` will be put into the `morpheus_ui` group.
+
 #### App
 
 The App search type will create a group named `name` out of the instances in the `apptier` tier of app `appname`.
@@ -190,3 +212,7 @@ install -o morpheus-local -g morpheus-local -m 0770 -d /var/opt/morpheus/morpheu
 In your task, specify `--vault-password-file /var/opt/morpheus/morpheus-ui/ansiblevault/<file>` in order to use the password.
 
 Information on encrypting strings and variables for ansible is located [HERE](https://docs.ansible.com/ansible/latest/user_guide/vault.html)
+
+## Ansible Roles for Morpheus Setup
+
+See README files in `roles/` for information regarding the roles in this collection

@@ -1,0 +1,17 @@
+morpheus_url: ""
+morpheus_api: "{{ morpheus_url }}/api"
+morpheus_token: ""
+verify_ssl: true
+
+# morpheus_optionlists:
+#   - name: "Cloud Service Levels"
+#     type: manual
+#     initialDataset: "'Basic','basic'\r\n'Medium','medium'\r\n'Supersize','supersize'"
+
+#   - name: Cloud
+#     type: manual
+#     initialDataset: "'Azure','azure'\r\n'Amazon Web Services','aws'\r\n'Google Compute Platform','gcp'"
+
+#   - name: Regions
+#     type: manual
+#     initialDataset: "'Central US','centralus'\r\n'East US','eastus'\r\n'East US 2','eastus2'\r\n'West US','westus'\r\n'North Central US','northcentralus'\r\n'South Central US','southcentralus'\r\n'North Europe','northeurope'\r\n'West Europe','westeurope'\r\n'Japan West','japanwest'\r\n'Japan East','japaneast'\r\n'Brazil South','brazilsouth'\r\n'Australia East','australiaeast'\r\n'Australia Southeast','australiasoutheast'\r\n'South India','southindia'\r\n'Central India','centralindia'\r\n'West India','westindia'\r\n'Canada Central','canadacentral'\r\n'Canada East','canadaeast'\r\n'UK South','uksouth'\r\n'UK West','ukwest'\r\n'West Central US ,'westcentralus'\r\n'West US 2','westus2'\r\n'Korea Central','koreacentral'\r\n'Korea South','koreasouth'\r\n'France Central','francecentral'\r\n'France South','francesouth'\r\n'Australia Central','australiacentral'\r\n'Australia Central 2','australiacentral2'\r\n'UAE Central','uaecentral'\r\n'UAE North','uaenorth'\r\n'South Africa North','southafricanorth'\r\n'South Africa West','southafricawest'\r\n'Switzerland North','switzerlandnorth'\r\n'Switzerland West','switzerlandwest'\r\n'Germany North','germanynorth'\r\n'Germany West Central','germanywestcentral'\r\n'Norway West','norwaywest'\r\n'Norway East','norwayeast'\r\n'East Asia','eastasia'\r\n'Southeast Asia','southeastasia'"
