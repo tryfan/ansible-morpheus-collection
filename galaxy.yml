@@ -1,5 +1,6 @@
 namespace: "morpheusdata"
 name: "morpheus"
+description: Ansible collection for interacting with Morpheus
 version: "0.1.5"
 readme: "README.md"
 authors:
