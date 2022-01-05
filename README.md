@@ -1,3 +1,7 @@
+Archiving and moving to https://github.com/gomorpheus/ansible-collection-morpheus-core
+
+Check out the Galaxy release here: https://galaxy.ansible.com/morpheus/core
+
 # Ansible Dynamic Inventory for Morpheus
 
 ## Installation
